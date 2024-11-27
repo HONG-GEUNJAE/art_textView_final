@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>찰나의 사랑을 선포하다</title>
+    <style>
+        body {
+            font-size: 20px; /* 기본 글자 크기 */
+        }
+        h1 {
+            font-size: 30px; /* 제목 글자 크기 */
+        }
+        .description {
+            font-size: 15px; /* 설명 글자 크기 */
+            margin-bottom: 20px; /* 설명과 입력창 사이 여백 */
+        }
+    </style>
+</head>
+<body>
+    <h1>찰나의 사랑을 선포하다.</h1>
+    <p class="description">
+        “지금 이 순간 내가 사랑하고 있는 것” 을 입력해주세요.<br>
+        당신이 선포한 사랑의 문구는 5초면 이 세상에서 사라집니다.<br>
+        영원한 사랑은 없다는 걸 알고 있음에도, 타인 앞에서 사랑을 선포하는 것<br>
+        당신은 삶 속에서 이미 이 현상을 너무나도 익숙하게 받아들여오지 않았나요?
+    </p>
+    <input type="text" id="messageInput" placeholder="메시지를 입력하세요">
+    <button id="sendButton">전송</button>
+
+    <script type="module">
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-app.js";
+        import { getDatabase, ref, set, push, onValue, remove } from "https://www.gstatic.com/firebasejs/11.0.1/firebase-database.js";
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyAiRFEZZiRoJE72gH0ji7YIbxQD3utjuw4",
+            authDomain: "textview-dd9bb.firebaseapp.com",
+            projectId: "textview-dd9bb",
+            storageBucket: "textview-dd9bb.firebasestorage.app",
+            messagingSenderId: "663373850612",
+            appId: "1:663373850612:web:9a36fabcf59d0529483ba1",
+            measurementId: "G-K2TKL81V0L"
+        };
+
+        const app = initializeApp(firebaseConfig);
+        const database = getDatabase(app, 'https://textview-dd9bb-default-rtdb.asia-southeast1.firebasedatabase.app');
+        const messagesRef = ref(database, 'messages');
+
+        // 데이터베이스 내 데이터 개수를 확인하고, 1개만 유지하도록 삭제
+        function keepOnlyOneMessage() {
+            onValue(messagesRef, (snapshot) => {
+                const messageKeys = [];
+                snapshot.forEach((childSnapshot) => {
+                    messageKeys.push(childSnapshot.key);
+                });
+
+                // 데이터가 2개 이상이면 가장 오래된 데이터 삭제
+                if (messageKeys.length > 1) {
+                    const oldestMessageRef = ref(database, 'messages/' + messageKeys[0]);
+                    remove(oldestMessageRef);
+                }
+            });
+        }
+
+        document.getElementById('sendButton').addEventListener('click', () => {
+            const messageInput = document.getElementById('messageInput');
+            const messageText = messageInput.value;
+
+            if (messageText) {
+                // Firebase에 새 메시지 추가
+                const newMessageRef = push(messagesRef);
+                set(newMessageRef, {
+                    text: messageText
+                });
+
+                // 데이터베이스 내 1개 데이터만 유지
+                keepOnlyOneMessage();
+
+                messageInput.value = ''; // 입력 필드 초기화
+            }
+        });
+
+        // 초기화 시에도 데이터베이스를 1개만 유지
+        keepOnlyOneMessage();
+    </script>
+</body>
+</html>
